@@ -23,7 +23,7 @@ from document_parser import parse_uploaded_file, StructuredElement
 load_dotenv()
 
 # App title and description
-st.set_page_config(page_title="Sutra - Unstructured to Structured Data", layout="wide")
+st.set_page_config(page_title="Sutra", layout="wide")
 
 # ----------------------------
 # Header (title + tagline)
