@@ -111,4 +111,4 @@ Icon?
 *~
 
 # Logs
-*.log 
+*.log .env
