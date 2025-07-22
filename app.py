@@ -7,6 +7,12 @@ from typing import List, Dict, Any, Tuple, Optional, BinaryIO, Union
 from pathlib import Path
 
 import streamlit as st
+# Sidebar feedback section
+st.sidebar.markdown("## 📝 Help Improve This Tool")
+st.sidebar.write("Takes 2 minutes. Tell me what worked, what sucked, and what you'd change.")
+st.sidebar.markdown("[Give Feedback →](https://forms.gle/nEo8FV6WMXfJehJK8)")
+
+
 import pandas as pd
 import pdfplumber
 import docx
