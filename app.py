@@ -380,14 +380,6 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
             "temperature": 0  # Deterministic output
         }
     else:  # Default to OpenRouter
-        """url = "https://openrouter.ai/api/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://pdf2dataset-app.local", # Required for OpenRouter
-            "X-Title": "pdf2dataset App"  # Optional for OpenRouter
-        }
-        """
         url = "https://openrouter.ai/api/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
