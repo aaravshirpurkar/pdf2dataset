@@ -14,6 +14,10 @@ from PIL import Image
 import pytesseract
 import requests
 from dotenv import load_dotenv
+from utils import get_headers
+
+headers = get_headers()
+
 
 llm_api_key = st.secrets["LLM_API_KEY"]
 llm_provider = st.secrets["LLM_PROVIDER"]
