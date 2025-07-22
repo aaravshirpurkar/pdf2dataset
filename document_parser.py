@@ -1,5 +1,5 @@
 """
-Advanced document parser for Sutra application.
+Advanced document parser for pdf2dataset application.
 Extracts structured content from documents, including text, tables, images, and specialized content.
 """
 

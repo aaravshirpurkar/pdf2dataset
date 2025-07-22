@@ -1,5 +1,5 @@
 """
-Document classifier module for Sutra application.
+Document classifier module for pdf2dataset application.
 Detects document types based on textual and layout patterns.
 """
 

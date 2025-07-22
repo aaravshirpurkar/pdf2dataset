@@ -23,7 +23,7 @@ from document_parser import parse_uploaded_file, StructuredElement
 load_dotenv()
 
 # App title and description
-st.set_page_config(page_title="Sutra", layout="wide")
+st.set_page_config(page_title="pdf2dataset", layout="wide")
 
 # ----------------------------
 # Header (title + tagline)
@@ -37,30 +37,29 @@ st.markdown(
         }
 
         /* Header styling */
-        .sutra-header {
+        .pdf2dataset-header {
             display: flex;
             align-items: baseline;
             column-gap: 0.75rem;
             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
 
-        .sutra-header h1 {
+        .pdf2dataset-header h1 {
             font-size: 2.4rem;
             font-weight: 800;
             margin: 0;
             color: #ffffff; /* Ensure visibility on dark background */
         }
 
-        .sutra-header span.tagline {
+        .pdf2dataset-header span.tagline {
             font-size: 1.25rem;
             font-weight: 400;
             color: #cccccc; /* Light grey for contrast */
         }
     </style>
 
-    <div class="sutra-header">
-        <h1>Sutra</h1>
-        <span class="tagline">Thread structure into your chaos.</span>
+    <div class="pdf2dataset-header">
+        <h1>pdf2dataset</h1>
     </div>
     """,
     unsafe_allow_html=True,
@@ -96,7 +95,7 @@ def extract_text_from_pdf(file: BinaryIO) -> Tuple[str, List[str], Dict[str, Any
     
     try:
         # Use the document parser to extract structured content
-        output_dir = os.path.join(tempfile.gettempdir(), f"sutra_{int(time.time())}")
+        output_dir = os.path.join(tempfile.gettempdir(), f"pdf2dataset_{int(time.time())}")
         os.makedirs(output_dir, exist_ok=True)
         
         structured_content = parse_uploaded_file(file, file.name, output_dir)
@@ -171,7 +170,7 @@ def extract_text_from_docx(file: BinaryIO) -> Tuple[str, Dict[str, Any], List[Di
     
     try:
         # Use the document parser to extract structured content
-        output_dir = os.path.join(tempfile.gettempdir(), f"sutra_{int(time.time())}")
+        output_dir = os.path.join(tempfile.gettempdir(), f"pdf2dataset_{int(time.time())}")
         os.makedirs(output_dir, exist_ok=True)
         
         structured_content = parse_uploaded_file(file, file.name, output_dir)
@@ -233,7 +232,7 @@ def extract_text_from_image(file: BinaryIO) -> Tuple[str, Dict[str, Any], List[D
     
     try:
         # Use the document parser to extract structured content
-        output_dir = os.path.join(tempfile.gettempdir(), f"sutra_{int(time.time())}")
+        output_dir = os.path.join(tempfile.gettempdir(), f"pdf2dataset_{int(time.time())}")
         os.makedirs(output_dir, exist_ok=True)
         
         structured_content = parse_uploaded_file(file, file.name, output_dir)
@@ -395,8 +394,8 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://sutra-app.local", # Required for OpenRouter
-            "X-Title": "Sutra App"  # Optional for OpenRouter
+            "HTTP-Referer": "https://pdf2dataset-app.local", # Required for OpenRouter
+            "X-Title": "pdf2dataset App"  # Optional for OpenRouter
         }
         # Use provided model or default to a free model
         if model:
@@ -946,7 +945,7 @@ def main():
                             if "snippets" in question and question["snippets"]:
                                 for snippet in question["snippets"]:
                                     snippet_path = os.path.join(tempfile.gettempdir(), 
-                                                              f"sutra_{int(time.time())}", snippet)
+                                                              f"pdf2dataset_{int(time.time())}", snippet)
                                     if os.path.exists(snippet_path):
                                         st.image(snippet_path, caption=f"Question {i+1} image")
                 
@@ -969,7 +968,7 @@ def main():
                             if "snippets" in formula and formula["snippets"]:
                                 for snippet in formula["snippets"]:
                                     snippet_path = os.path.join(tempfile.gettempdir(), 
-                                                              f"sutra_{int(time.time())}", snippet)
+                                                              f"pdf2dataset_{int(time.time())}", snippet)
                                     if os.path.exists(snippet_path):
                                         st.image(snippet_path, caption=f"Formula {i+1} image")
                 
