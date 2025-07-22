@@ -292,7 +292,6 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
         List of dictionaries containing structured data
     """
     api_key = st.secrets.get("LLM_API_KEY", "")
-    st.write("API Key being used for LLM:", api_key)
     api_provider = st.secrets.get("LLM_PROVIDER", "openrouter").lower()
     model = st.secrets.get("LLM_MODEL", "")
     

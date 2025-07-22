@@ -1,6 +1,15 @@
 # pdf2dataset
 
-## Streamlit Secrets Setup
+
+## Hosted Demo
+
+Want to try it out instantly? Visit the hosted demo:
+
+[https://pdf2dataset.streamlit.app/](https://pdf2dataset.streamlit.app/)
+
+No setup required—just upload your files and experiment with extraction!
+
+# Streamlit Secrets Setup
 
 To use this app, you must provide your API credentials in a Streamlit secrets file. Create a file at `.streamlit/secrets.toml` in your project directory with the following content:
 
@@ -10,8 +19,20 @@ LLM_PROVIDER = "openrouter"
 LLM_MODEL = "mistralai/mistral-7b-instruct:free"
 ```
 
-- Do NOT commit `.streamlit/secrets.toml` to your repository. It is already listed in `.gitignore`.
+- **Do NOT commit `.streamlit/secrets.toml` to your repository.** It is already listed in `.gitignore`.
 - The app will use these secrets for authentication and configuration.
+- If you change your API key, update this file and restart the app.
+
+## Troubleshooting LLM/API Key Issues
+
+If you see errors like `401 Unauthorized` or `No auth credentials found`:
+
+- Double-check your API key in `.streamlit/secrets.toml` (it should start with `sk-or-v1-...` for OpenRouter).
+- Make sure your account is active and the key is valid (regenerate if needed).
+- Ensure you have access to the requested model (try `mistralai/mistral-7b-instruct:free` for OpenRouter).
+- Restart the app after updating your secrets file.
+- If the error persists, test your API key with a simple `curl` command to confirm it works outside the app.
+- Never share or commit your API key publicly.
 
 ## Running the App
 
