@@ -15,6 +15,11 @@ import pytesseract
 import requests
 from dotenv import load_dotenv
 
+llm_api_key = st.secrets["LLM_API_KEY"]
+llm_provider = st.secrets["LLM_PROVIDER"]
+llm_model = st.secrets["LLM_MODEL"]
+
+
 # Import the document classifier and parser
 from document_classifier import detect_document_type, get_extraction_hints
 from document_parser import parse_uploaded_file, StructuredElement
