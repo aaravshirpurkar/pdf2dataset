@@ -71,7 +71,7 @@ st.markdown(
 
 def sanitize_df(df: pd.DataFrame) -> pd.DataFrame:
     """Return a copy where any dict/list cells are JSON-stringified for display."""
-    return df.applymap(lambda x: json.dumps(x, ensure_ascii=False) if isinstance(x, (dict, list)) else x)
+    return df.map(lambda x: json.dumps(x, ensure_ascii=False) if isinstance(x, (dict, list)) else x)
 
 
 def extract_text_from_pdf(file: BinaryIO) -> Tuple[str, List[str], Dict[str, Any], List[Dict[str, Any]]]:
@@ -293,37 +293,18 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
     
     # Enhanced system prompt to instruct the LLM
     system_prompt = """
-    You are a data extraction expert specialized in converting unstructured text into structured datasets.
+    You are a JSON extraction API.
     
-    ## TASK:
-    Extract information from the provided text based on the user's instructions, and return it as a valid JSON array of objects.
+    TASK:
+    Convert the provided unstructured text into a valid **JSON array** that fulfils the user's extraction request.
     
-    ## GUIDELINES:
-    1. Carefully analyze the text to identify ALL instances of the requested data
-    2. Create a consistent schema where every object has the same keys
-    3. Be comprehensive - extract ALL relevant entries from the document
-    4. Infer column names from the user's request if not explicitly stated
-    5. Use appropriate data types (numbers for numeric values, strings for text)
-    6. Fill empty/missing fields with null or appropriate default values
-    7. If the text contains tables, convert them to structured records
-    8. If extracting multiple record types, use nested objects where appropriate
-    
-    ## REQUIRED OUTPUT FORMAT:
-    Return ONLY a valid JSON array of objects like:
-    [
-      {
-        "column1": "value1",
-        "column2": 123,
-        "column3": "value3"
-      },
-      {
-        "column1": "value4",
-        "column2": 456,
-        "column3": "value6"
-      }
-    ]
-    
-    Do not include any explanations, notes, or text outside the JSON array.
+    OUTPUT RULES:
+    1. Output **ONLY** a valid JSON array – absolutely no markdown fences, commentary, or extra text.
+    2. Preserve every mathematical symbol or special formatting by wrapping the **entire value** in back-ticks, e.g.
+         "question": "`f'(x) = 2x`".
+    3. Use exactly the keys requested by the user. If none are given, infer sensible, consistent field names.
+    4. Be comprehensive – extract **all** matching records.
+    5. If nothing matches, output an empty array `[]`.
     """
     
     # Enhanced full prompt with clearer instructions and document type info
@@ -387,7 +368,7 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
                 {"role": "user", "content": full_prompt}
             ],
             "response_format": {"type": "json_object"},
-            "temperature": 0.1  # Lower temperature for more consistent results
+            "temperature": 0  # Deterministic output
         }
     else:  # Default to OpenRouter
         url = "https://openrouter.ai/api/v1/chat/completions"
@@ -411,7 +392,7 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
                 {"role": "user", "content": full_prompt}
             ],
             "response_format": {"type": "json_object"},
-            "temperature": 0.1  # Lower temperature for more consistent results
+            "temperature": 0  # Deterministic output
         }
     
     # Attempt API call with retry
