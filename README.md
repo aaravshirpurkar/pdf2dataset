@@ -1,5 +1,44 @@
 # pdf2dataset
 
+## Streamlit Secrets Setup
+
+To use this app, you must provide your API credentials in a Streamlit secrets file. Create a file at `.streamlit/secrets.toml` in your project directory with the following content:
+
+```
+LLM_API_KEY = "your-api-key-here"
+LLM_PROVIDER = "openrouter"
+LLM_MODEL = "mistralai/mistral-7b-instruct:free"
+```
+
+- Do NOT commit `.streamlit/secrets.toml` to your repository. It is already listed in `.gitignore`.
+- The app will use these secrets for authentication and configuration.
+
+## Running the App
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Start the Streamlit app:
+   ```bash
+   streamlit run app.py
+   ```
+
+## Supported Document Types
+- PDF
+- DOCX
+- JPG, PNG (images)
+
+## Features
+- Document classification
+- Text, table, and question extraction
+- LLM-powered structured data extraction
+- Download results as CSV, Excel, or JSON
+
+## Contributing
+Pull requests and issues are welcome!
+# pdf2dataset
+
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/) [![Streamlit](https://img.shields.io/badge/Streamlit-1.x-ff4b4b)](https://streamlit.io/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered toolkit that converts unstructured **PDF, DOCX, and image** files into clean, structured datasets (CSV / Excel / JSON).

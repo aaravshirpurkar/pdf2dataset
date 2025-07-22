@@ -291,9 +291,9 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
     Returns:
         List of dictionaries containing structured data
     """
-    api_key = os.getenv("LLM_API_KEY")
-    api_provider = os.getenv("LLM_PROVIDER", "openrouter").lower()
-    model = os.getenv("LLM_MODEL", "")
+    api_key = st.secrets.get("LLM_API_KEY", "")
+    api_provider = st.secrets.get("LLM_PROVIDER", "openrouter").lower()
+    model = st.secrets.get("LLM_MODEL", "")
     
     if not api_key:
         st.error("LLM API key not found. Please add it to your .env file.")
