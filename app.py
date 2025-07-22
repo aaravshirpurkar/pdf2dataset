@@ -387,6 +387,15 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
             "HTTP-Referer": "https://pdf2dataset-app.local", # Required for OpenRouter
             "X-Title": "pdf2dataset App"  # Optional for OpenRouter
         }
+    
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://pdf2dataset.streamlit.app/", # Required for OpenRouter
+            "X-Title": "pdf2dataset App"  # Optional for OpenRouter
+        }
+
         # Use provided model or default to a free model
         if model:
             model_name = model
