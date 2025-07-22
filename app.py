@@ -280,7 +280,6 @@ def extract_text_from_image(file: BinaryIO) -> Tuple[str, Dict[str, Any], List[D
 
 
 def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> List[Dict[str, Any]]:
-    st.write("API Key being used for LLM:", api_key)
     """
     Send text and prompt to an LLM API and get structured data in response.
     
@@ -293,6 +292,7 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
         List of dictionaries containing structured data
     """
     api_key = st.secrets.get("LLM_API_KEY", "")
+    st.write("API Key being used for LLM:", api_key)
     api_provider = st.secrets.get("LLM_PROVIDER", "openrouter").lower()
     model = st.secrets.get("LLM_MODEL", "")
     
