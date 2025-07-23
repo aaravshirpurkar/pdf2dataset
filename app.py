@@ -15,12 +15,17 @@ st.sidebar.markdown("[Give Feedback →](https://forms.gle/nEo8FV6WMXfJehJK8)")
 
 import pandas as pd
 import pdfplumber
+import fitz  # PyMuPDF
+import nougat
 import docx
 from PIL import Image
 import pytesseract
 import requests
 from dotenv import load_dotenv
 from utils import get_headers
+from ensemble_extractor import ensemble_voting
+from document_router import DocumentRouter
+from data_validator import DataValidator
 
 headers = get_headers()
 
@@ -129,30 +134,152 @@ def extract_text_from_pdf(file: BinaryIO) -> Tuple[str, List[str], Dict[str, Any
                 if "options" in item:
                     for letter, option_text in item["options"].items():
                         text += f"{letter}) {option_text}\n"
-        
-        # If no document type detected yet, use traditional method for backward compatibility
+
+        # If no document type detected yet, use pdfplumber as last fallback
         if not document_info:
-            with pdfplumber.open(temp_path) as pdf:
-                total_pages = len(pdf.pages)
-                progress_bar = st.progress(0)
-                
-                for i, page in enumerate(pdf.pages):
+            if not text.strip():
+                with pdfplumber.open(temp_path) as pdf:
+                    total_pages = len(pdf.pages)
+                    progress_bar = st.progress(0)
+                    for i, page in enumerate(pdf.pages):
+                        try:
+                            page_text = page.extract_text() or ""
+                            text += page_text + "\n"
+                        except Exception:
+                            failed_pages.append(str(i + 1))
+                            # Save full page image as fallback
+                            try:
+                                from pdf2image import convert_from_path
+                                pdf_images = convert_from_path(temp_path, dpi=200)
+                                if i < len(pdf_images):
+                                    snippet_path = os.path.join(output_dir, f"failed_page_{i+1}.png")
+                                    pdf_images[i].save(snippet_path)
+                                    structured_content.append({
+                                        "type": "image",
+                                        "content": "",
+                                        "snippets": [os.path.basename(snippet_path)],
+                                        "notes": "Saved image snippet for failed OCR/parse page",
+                                        "page": i
+                                    })
+                            except Exception:
+                                pass
+                        progress_bar.progress((i + 1) / total_pages)
+                    # Detect document type from extracted text
+                    if text:
+                        doc_info = detect_document_type(text)
+                        document_info = {
+                            "document_type": doc_info.get("document_type", "unknown"),
+                            "confidence": doc_info.get("confidence", 0),
+                            "extraction_hints": get_extraction_hints(doc_info.get("document_type", "unknown"))
+                        }
+                # If still no text, try nougat as fallback
+                if not text.strip():
                     try:
-                        page_text = page.extract_text() or ""
-                        text += page_text + "\n"
-                    except Exception:
-                        failed_pages.append(str(i + 1))
-                    
-                    progress_bar.progress((i + 1) / total_pages)
-                
-                # Detect document type from extracted text
-                if text:
-                    doc_info = detect_document_type(text)
-                    document_info = {
-                        "document_type": doc_info.get("document_type", "unknown"),
-                        "confidence": doc_info.get("confidence", 0),
-                        "extraction_hints": get_extraction_hints(doc_info.get("document_type", "unknown"))
-                    }
+                        # nougat expects a file path
+                        nougat_text = nougat.parse_pdf(temp_path)
+                        if nougat_text:
+                            text += nougat_text + "\n"
+                    except Exception as e:
+                        st.warning(f"Nougat PDF parsing failed: {e}")
+
+                # If still no text, try pymupdf4llm as fallback
+                if not text.strip():
+                    try:
+                        import pymupdf4llm
+                        llm_text = pymupdf4llm.parse_pdf(temp_path)
+                        if llm_text:
+                            text += llm_text + "\n"
+                    except Exception as e:
+                        st.warning(f"pymupdf4llm PDF parsing failed: {e}")
+
+                # If still no text, try pdfminer.six
+                if not text.strip():
+                    try:
+                        from pdfminer.high_level import extract_text as pdfminer_extract_text
+                        pdfminer_text = pdfminer_extract_text(temp_path)
+                        if pdfminer_text:
+                            text += pdfminer_text + "\n"
+                    except Exception as e:
+                        st.warning(f"pdfminer.six PDF parsing failed: {e}")
+
+                # Try Camelot for tables
+                try:
+                    import camelot
+                    tables = camelot.read_pdf(temp_path, pages="all")
+                    for table in tables:
+                        df_table = table.df
+                        table_json = df_table.to_json(orient="split")
+                        structured_content.append({
+                            "type": "table",
+                            "content": table_json,
+                            "notes": "Extracted with Camelot"
+                        })
+                except Exception as e:
+                    st.warning(f"Camelot table extraction failed: {e}")
+
+                # Try Tabula-py for tables
+                try:
+                    import tabula
+                    tabula_tables = tabula.read_pdf(temp_path, pages="all", multiple_tables=True)
+                    for df_table in tabula_tables:
+                        table_json = df_table.to_json(orient="split")
+                        structured_content.append({
+                            "type": "table",
+                            "content": table_json,
+                            "notes": "Extracted with Tabula-py"
+                        })
+                except Exception as e:
+                    st.warning(f"Tabula-py table extraction failed: {e}")
+
+                # Try Tika for text extraction
+                if not text.strip():
+                    try:
+                        from tika import parser as tika_parser
+                        tika_parsed = tika_parser.from_file(temp_path)
+                        tika_text = tika_parsed.get("content", "")
+                        if tika_text:
+                            text += tika_text + "\n"
+                    except Exception as e:
+                        st.warning(f"Tika PDF parsing failed: {e}")
+
+                # Try LayoutParser for layout analysis
+                try:
+                    import layoutparser as lp
+                    layout = lp.load_pdf(temp_path)
+                    for page_layout in layout:
+                        for block in page_layout:
+                            structured_content.append({
+                                "type": "layout_block",
+                                "content": str(block),
+                                "notes": "Extracted with LayoutParser"
+                            })
+                except Exception as e:
+                    st.warning(f"LayoutParser PDF layout analysis failed: {e}")
+
+                # Try Unstructured for general extraction
+                if not text.strip():
+                    try:
+                        from unstructured.partition.pdf import partition_pdf
+                        elements = partition_pdf(filename=temp_path)
+                        for el in elements:
+                            text += str(el) + "\n"
+                    except Exception as e:
+                        st.warning(f"Unstructured PDF parsing failed: {e}")
+                        nougat_text = nougat.parse_pdf(temp_path)
+                        if nougat_text:
+                            text += nougat_text + "\n"
+                    except Exception as e:
+                        st.warning(f"Nougat PDF parsing failed: {e}")
+
+                # If still no text, try pymupdf4llm as fallback
+                if not text.strip():
+                    try:
+                        import pymupdf4llm
+                        llm_text = pymupdf4llm.parse_pdf(temp_path)
+                        if llm_text:
+                            text += llm_text + "\n"
+                    except Exception as e:
+                        st.warning(f"pymupdf4llm PDF parsing failed: {e}")
     except Exception as e:
         st.error(f"Failed to process PDF: {e}")
     finally:
@@ -161,7 +288,6 @@ def extract_text_from_pdf(file: BinaryIO) -> Tuple[str, List[str], Dict[str, Any
             Path(temp_path).unlink(missing_ok=True)
         except:
             pass
-    
     return text, failed_pages, document_info, structured_content
 
 
@@ -527,7 +653,53 @@ def call_llm(prompt: str, text: str, document_info: Dict[str, Any] = None) -> Li
                 # Try to parse the extracted JSON block
                 try:
                     result = json.loads(json_block)
-                    # If the result is a dict with a records key, use that (some APIs wrap the result)
+                    
+                    # Validate the extraction quality
+                    if isinstance(result, (dict, list)):
+                        # Quick quality check
+                        quality_prompt = f"""
+                        Review the extracted data for quality and completeness:
+                        {json.dumps(result, indent=2)}
+                        
+                        Original request: {prompt}
+                        
+                        Identify any:
+                        1. Missing key information
+                        2. Incorrect data types
+                        3. Inconsistent formatting
+                        
+                        Return ONLY the fixes needed as a JSON object, or empty object if no fixes needed.
+                        """
+                        
+                        # Make a second API call for quality check
+                        try:
+                            validation_response = requests.post(url, headers=headers, json={
+                                "model": model_name,
+                                "messages": [
+                                    {"role": "system", "content": "You are a data quality validator."},
+                                    {"role": "user", "content": quality_prompt}
+                                ],
+                                "temperature": 0
+                            })
+                            validation_response.raise_for_status()
+                            validation_result = validation_response.json()
+                            if "choices" in validation_result:
+                                validation_content = validation_result["choices"][0]["message"]["content"]
+                                try:
+                                    fixes = json.loads(validation_content)
+                                    if fixes and isinstance(fixes, dict):
+                                        st.info("🔍 Applying quality improvements to extracted data...")
+                                        # Apply fixes if any were suggested
+                                        if isinstance(result, dict) and "records" in result:
+                                            result["records"] = [dict(rec, **fixes) for rec in result["records"]]
+                                        elif isinstance(result, list):
+                                            result = [dict(rec, **fixes) for rec in result]
+                                except:
+                                    pass
+                        except:
+                            pass  # Continue with original result if validation fails
+                    
+                    # Return the results (possibly enhanced)
                     if isinstance(result, dict) and "records" in result:
                         return result["records"]
                     # If the result is already a list of dicts, use it directly
@@ -734,6 +906,11 @@ def process_files(files: List[Any], prompt: str) -> Tuple[Optional[pd.DataFrame]
     if not files:
         st.warning("Please upload at least one file.")
         return None, []
+        
+    # Initialize components
+    doc_router = DocumentRouter()
+    data_validator = DataValidator()
+    extraction_results = []
     
     with st.spinner("Extracting text from files..."):
         all_text = ""
