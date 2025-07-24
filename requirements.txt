@@ -41,8 +41,8 @@ torch; python_version < "3.12"
 sentencepiece; python_version < "3.12"
 # Domain-specific extraction helpers (require C/C++ build tools)
 # Chemistry-specific libraries (skip on Windows due to missing wheels/build issues)
-chemdataextractor; python_version < "3.12" and sys_platform != "win32"
-decimer; python_version < "3.12" and sys_platform != "win32" 
+# chemdataextractor; python_version < "3.12" and sys_platform != "win32"
+# decimer; python_version < "3.12" and sys_platform != "win32" 
 
 # Image preprocessing helper
 opencv-python-headless; python_version < "3.12" 
